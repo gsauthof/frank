@@ -20,11 +20,11 @@ List all products that are called 'sendung' or so:
 
     $ frank --list-products sendung
 
-Preview a Büchersendung stamp (creates postage_YYYY-MM-DD.pdf):
+Preview a Büchersendung stamp (creates `postage_YYYY-MM-DD.pdf`):
 
     $ frank --preview --product 78 --format 1
 
-Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
+Frank and buy 2 stamps (create 2 page document `postage_YYYY-MM-DD.pdf`):
 
     $ frank ---format 26  --product 79 'Joe User;Street 1;12345 City' \\
        'Jane User;Fakestreet 2;67890 Fakestadt'
@@ -48,6 +48,25 @@ you have to fill out some [web-form][5], you get contacted by an
 operator for confirmation and then you have follow-up with a
 request for the credentials. Or, you can [directly write an
 email][1] to the address of the Deutsche-Post web-service team.
+
+Example of a local `~/.config/frank.conf`:
+
+    [api]
+    id = your-partner-id
+    key = your-api-key
+    key_phase = 1
+
+    [account]
+    user = portokasse-user
+    password = portokasse-pw
+
+    [a.default]
+    first =
+    name = Firma ACME
+    street = Lindenallee
+    number = 3
+    zip = 12345
+    city = Bielefeld
 
 
 ## Background
