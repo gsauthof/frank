@@ -1,0 +1,3 @@
+[submodule "python-inema"]
+	path = python-inema
+	url = https://gitlab.com/gsauthof/python-inema.git
