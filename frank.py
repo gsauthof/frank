@@ -281,7 +281,7 @@ def buy(im, sender, recipient, product, i, pi, args, conf):
 
 
 def mk_filename(args, base='postage'):
-  filename = '{}/{}_{}{}.pdf'.format(base, args.output,
+  filename = '{}/{}_{}{}.pdf'.format(args.output, base,
       datetime.datetime.now().strftime('%Y-%m-%d'), args.suffix)
   return filename
 
