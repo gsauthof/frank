@@ -10,6 +10,7 @@ import logging
 import re
 import datetime
 import requests
+import csv
 
 import inema
 
@@ -121,6 +122,8 @@ Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
       help = 'recipients')
   p.add_argument('--config', action='append',
       metavar='FILENAME', help='user specific config file')
+  p.add_argument('--csv', metavar='FILENAME',
+      help='read recipient data from CSV file (1st row is header)')
   p.add_argument('--debug', help='store debug message into log file')
   p.add_argument('--dry', action='store_true', help='dry run')
   p.add_argument('--format' ,'-f', default='1',
@@ -248,6 +251,19 @@ def parse_address(s, conf):
       country = c
   return (first, name, street, number, zipcode, city, country)
 
+def parse_csv(filename):
+  xs = []
+  ps = []
+  with open(filename, 'r') as f:
+    rs = csv.reader(f)
+    next(rs)
+    for r in rs:
+      xs.append(r[0:7] + ['']*(7-r.__len__()))
+      if r.__len__() > 7:
+        ps.append(r[7])
+  return (xs, ps)
+
+
 def parse_addresses(args, conf):
   recipients = []
   for r in args.recipients:
@@ -257,9 +273,16 @@ def parse_addresses(args, conf):
   for r in args.sender:
     sender.append(parse_address(r, conf))
   args.sender = sender
+  if args.csv:
+    t = parse_csv(args.csv)
+    args.recipients = args.recipients + t[0]
+    if not args.product:
+      args.product = []
+    args.product = args.product + t[1]
+
+def apply_config(args, conf):
   if not args.manifest and conf.has_section('general'):
     args.manifest = conf['general'].get('manifest', False)
-  return args
 
 def mk_address(im, x, conf):
   a = im.build_addr(x[-5], x[-4], x[-3], x[-2], x[-1])
@@ -349,7 +372,8 @@ def main():
   args = parse_args()
   conf = read_config([args.global_conf, args.sys_conf]
     + [os.path.expanduser(x) for x in args.config] )
-  args = parse_addresses(args, conf)
+  parse_addresses(args, conf)
+  apply_config(args, conf)
   if args.debug:
     setup_file_logging(args.debug)
   return run(args, conf)
