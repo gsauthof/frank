@@ -4,13 +4,22 @@
 
 import argparse
 import configparser
-import os
-import sys
-import logging
-import re
-import datetime
-import requests
 import csv
+import datetime
+import logging
+import os
+import re
+import requests
+import sys
+
+# to use a developer version of inema if available
+if 1 == 1:
+  import inspect
+  s = inspect.getsourcefile(lambda:0)
+  if s and s != '<stdin>':
+    d = os.path.dirname(os.path.abspath(s)) + '/python-inema'
+    if os.path.exists(d):
+      sys.path.insert(0, d)
 
 import inema
 
