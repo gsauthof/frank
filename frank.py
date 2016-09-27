@@ -193,6 +193,7 @@ def list_formats(expr):
   e = re.compile(expr, flags=re.IGNORECASE)
   fs = '{:>6} {:<44} {:>3}*{:>3} {:>5} {:<12} {:>3} {:>3}'
   print(fs.format('id', 'name', 'w', 'h', '#ls', 'type', 'adr', 'img'))
+  print('-'*(6+44+3+3+5+12+3+3 +7))
   for f in inema.inema.formats:
     if e.search(f['name']) or e.search(f['pageType']) \
         or e.search('{}x{}'.format(f['pageLayout']['size']['x'],
