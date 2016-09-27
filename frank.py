@@ -6,11 +6,13 @@ import argparse
 import configparser
 import csv
 import datetime
+import json
 import logging
 import os
 import re
 import requests
 import sys
+import zeep
 
 # to use a developer version of inema if available
 if 1 == 1:
@@ -139,6 +141,8 @@ Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
       help='format id for the resulting pdf')
   p.add_argument('--global-conf', default = '/usr/share/frank/frank.conf',
       metavar='FILENAME', help='global config file')
+  p.add_argument('--json', action='store_true',
+      help='print tablses as json')
   p.add_argument('--list-formats', nargs='?', default=None, const='.',
       metavar='REGEX', help='list available formats')
   p.add_argument('--list-products', nargs='?', default=None, const='.',
@@ -155,6 +159,8 @@ Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
   p.add_argument('--suffix', default='', help='postage basename suffix')
   p.add_argument('--sys-conf', default = '/etc/frank.conf',
       metavar='FILENAME', help='machine specific config file')
+  p.add_argument('--update', action='store_true',
+      help='update internal format list via webservice')
   return p
 
 def parse_args(xs = None):
@@ -210,8 +216,8 @@ def list_formats(expr):
     if e.search(f['name']) or e.search(f['pageType']) \
         or e.search('{}x{}'.format(f['pageLayout']['size']['x'],
                                    f['pageLayout']['size']['y'])):
-      print(fs.format(f['id'], f['name'], f['pageLayout']['size']['x'],
-          f['pageLayout']['size']['y'],
+      print(fs.format(f['id'], f['name'], int(f['pageLayout']['size']['x']),
+          int(f['pageLayout']['size']['y']),
            int(f['pageLayout']['labelCount']['labelX'])
           *int(f['pageLayout']['labelCount']['labelY']), f['pageType'],
           f['isAddressPossible'], f['isImagePossible']) )
@@ -342,12 +348,37 @@ def get_page_info(f):
   return ( int(f['pageLayout']['labelCount']['labelX']),
            int(f['pageLayout']['labelCount']['labelY']) )
 
-def run(args, conf):
+def do_list_products(args):
   if args.list_products:
     list_products(args.list_products)
-    return 0
+    return True
+
+def do_list_formats(args):
   if args.list_formats:
-    list_formats(args.list_formats)
+    if args.json:
+      print(json.dumps(inema.inema.formats, indent=2))
+    else:
+      list_formats(args.list_formats)
+    return True
+
+def do_update_list_formats(im, args):
+  if args.list_formats and args.update:
+    inema.inema.formats = sorted(zeep.helpers.serialize_object(
+      im.retrievePageFormats()), key=lambda x:x['id'])
+    return do_list_formats(args)
+
+def do_create_preview(im, args):
+  if args.preview:
+    link = im.retrievePreviewPDF(args.product[0], args.format)
+    pdf = requests.get(link, stream=True)
+    with open(mk_filename(args), 'wb') as f:
+      f.write(pdf.content)
+    return True
+
+def run(args, conf):
+  if do_list_products(args):
+    return 0
+  if not args.update and do_list_formats(args):
     return 0
   ps = args.product
   ss = args.sender
@@ -357,11 +388,9 @@ def run(args, conf):
     im = inema.Internetmarke(conf['api']['id'], conf['api']['key'],
         conf['api'].get('key_phase', '1'))
     im.authenticate(conf['account']['user'], conf['account']['password'])
-  if args.preview:
-    link = im.retrievePreviewPDF(args.product[0], args.format)
-    pdf = requests.get(link, stream=True)
-    with open(mk_filename(args), 'wb') as f:
-      f.write(pdf.content)
+  if do_create_preview(im, args):
+    return 0
+  if do_update_list_formats(im, args):
     return 0
   page = get_page_info(get_format(args.format))
   i = 0
