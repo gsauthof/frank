@@ -414,7 +414,19 @@ def main():
   apply_config(args, conf)
   if args.debug:
     setup_file_logging(args.debug)
-  return run(args, conf)
+  try:
+    return run(args, conf)
+  except zeep.exceptions.Fault as e:
+    d = str(e.detail)
+    try:
+      d = zeep.wsdl.utils.etree_to_string(e.detail).decode()
+      ids = e.detail.xpath('//*[name()="id"]')
+      ms = e.detail.xpath('//*[name()="message"]')
+      d = " - ".join(", ".join(x.text for x in xs) for xs in (ids, ms))
+    except TypeError:
+      pass
+    print('webservice fail: {} ({})'.format(e.message, d), file=sys.stderr)
+    return 1
 
 if __name__ == '__main__':
   sys.exit(main())
