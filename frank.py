@@ -148,6 +148,8 @@ Frank and buy 2 stamps (creates 2 page document postage_YYYY-MM-DD.pdf):
    $ frank ---format 26  --product 79 'Joe User;Street 1;12345 City' \\
        'Jane User;Fakestreet 2;67890 Fakestadt'
 
+It's also fine to delimit the recipient lines with newline characters.
+
 2016, Georg Sauthoff <mail@georg.so>, GPLv3+
 
 '''
