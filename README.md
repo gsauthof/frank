@@ -1,12 +1,20 @@
-This repository contains a command line program `frank` for buying
+This repository contains the command line program `frank` for buying
 postage online.
 
-Currently, the program only supports the Deutsche Post service
-('INTERNETMARKE' a.k.a. '1C4A' a.k.a.
-OneClickApplikation-Webservice) for letters and small packages.
-This program uses the [Python module `inema`][1] for
+The program supports the Deutsche Post service ('INTERNETMARKE'
+a.k.a. '1C4A' a.k.a.  OneClickApplikation-Webservice) for letters
+and small packages.  It uses the [Python `inema` package][1] for
 communicating with that web-service (which uses a custom
 [SOAP][2] flavour).
+
+Since mid 2017 it is [integrated with the inema package][1]. That
+means that after inema version > 0.2 is out you can get `frank`
+via pip, e.g.:
+
+    $ pip3 install --user inema
+
+Thus, this repository is the upstream development repository for
+`frank`.
 
 2016, Georg Sauthoff <mail@georg.so>, GPLv3+
 

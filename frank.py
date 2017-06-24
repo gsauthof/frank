@@ -15,15 +15,16 @@ import sys
 import zeep
 
 # to use a developer version of inema if available
-if 1 == 1:
+if __name__ == '__main__':
   import inspect
   s = inspect.getsourcefile(lambda:0)
   if s and s != '<stdin>':
     d = os.path.dirname(os.path.abspath(s)) + '/python-inema'
     if os.path.exists(d):
       sys.path.insert(0, d)
-
-import inema
+  from inema import Internetmarke, inema
+else:
+  from . import Internetmarke, inema
 
 class Fake_IM:
 
@@ -105,11 +106,28 @@ def mk_arg_parser():
   p = argparse.ArgumentParser(
       formatter_class=argparse.RawDescriptionHelpFormatter,
       description='buy postage online',
-      epilog='''Currenty, the program only supports the Deutsche Post
-service for letters and small packages.
+      epilog='''The program interfaces with the Deutsche Post
+postage service for letters and small packages.
 
 Account details are read from a config file, by default this is
-~/.config/frank.conf. See the README.md for an example.
+~/.config/frank.conf. An example config:
+
+    [api]
+    id = your-partner-id
+    key = your-api-key
+    key_phase = 1
+
+    [account]
+    user = portokasse-user
+    password = portokasse-pw
+
+    [a.default]
+    first =
+    name = Firma ACME
+    street = Lindenallee
+    number = 3
+    zip = 12345
+    city = Bielefeld
 
 Examples:
 
@@ -125,7 +143,7 @@ Preview a Büchersendung stamp (creates postage_YYYY-MM-DD.pdf):
 
    $ frank --preview --product 78 --format 1
 
-Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
+Frank and buy 2 stamps (creates 2 page document postage_YYYY-MM-DD.pdf):
 
    $ frank ---format 26  --product 79 'Joe User;Street 1;12345 City' \\
        'Jane User;Fakestreet 2;67890 Fakestadt'
@@ -190,7 +208,7 @@ def read_config(filenames):
 def list_products(expr):
   l = []
   e = re.compile(expr, flags=re.IGNORECASE)
-  for k,v in inema.inema.marke_products.items():
+  for k,v in inema.marke_products.items():
     if not e.search(v['name']):
       continue
     h = v
@@ -217,7 +235,7 @@ def list_formats(expr):
   fs = '{:>6} {:<44} {:>3}*{:>3} {:>5} {:<12} {:>3} {:>3}'
   print(fs.format('id', 'name', 'w', 'h', '#ls', 'type', 'adr', 'img'))
   print('-'*(6+44+3+3+5+12+3+3 +7))
-  for f in inema.inema.formats:
+  for f in inema.formats:
     if e.search(f['name']) or e.search(f['pageType']) \
         or e.search('{}x{}'.format(f['pageLayout']['size']['x'],
                                    f['pageLayout']['size']['y'])):
@@ -345,7 +363,7 @@ def store_files(res, args):
       f.write(pdf_bin)
 
 def get_format(ident):
-  for f in inema.inema.formats:
+  for f in inema.formats:
     if f['id'] == int(ident):
       return f
   raise ValueError("Couldn't find format id: {}".format(ident))
@@ -362,14 +380,14 @@ def do_list_products(args):
 def do_list_formats(args):
   if args.list_formats:
     if args.json:
-      print(json.dumps(inema.inema.formats, indent=2))
+      print(json.dumps(inema.formats, indent=2))
     else:
       list_formats(args.list_formats)
     return True
 
 def do_update_list_formats(im, args):
   if args.list_formats and args.update:
-    inema.inema.formats = sorted(zeep.helpers.serialize_object(
+    inema.formats = sorted(zeep.helpers.serialize_object(
       im.retrievePageFormats()), key=lambda x:x['id'])
     return do_list_formats(args)
 
@@ -391,7 +409,7 @@ def run(args, conf):
   if args.dry:
     im = Fake_IM()
   else:
-    im = inema.Internetmarke(conf['api']['id'], conf['api']['key'],
+    im = Internetmarke(conf['api']['id'], conf['api']['key'],
         conf['api'].get('key_phase', '1'))
     im.authenticate(conf['account']['user'], conf['account']['password'])
   if do_create_preview(im, args):
@@ -412,7 +430,7 @@ def run(args, conf):
   store_files(res, args)
   return 0
 
-def main(args):
+def imain(args):
   conf = read_config([args.global_conf, args.sys_conf]
     + [os.path.expanduser(x) for x in args.config] )
   parse_addresses(args, conf)
@@ -428,14 +446,15 @@ def main(args):
       d = " - ".join(", ".join(x.text for x in xs) for xs in (ids, ms))
     except TypeError:
       pass
-    log.error('webservice fail: {} ({})'.format(e.message, d), file=sys.stderr)
+    log.error('{} ({})'.format(e.message, d))
     return 1
 
-if __name__ == '__main__':
+def main():
   setup_logging()
   args = parse_args()
-
   log.debug('Starting frank.py')
+  imain(args)
 
-  sys.exit(main(args))
+if __name__ == '__main__':
+  sys.exit(main())
 
