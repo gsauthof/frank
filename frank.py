@@ -25,7 +25,7 @@ if 1 == 1:
 
 import inema
 
-class Fake_IM(object):
+class Fake_IM:
 
   def checkoutPDF(self, format_id):
     pass
@@ -48,24 +48,23 @@ class Fake_IM(object):
   def retrievePreviewPDF(self, prod_code, page_format, layout = "AddressZone"):
     pass
 
+  def compute_total(self):
+    return 0
+
 try:
   import colorlog
-  have_colorlog = True
 except ImportError:
-  have_colorlog = False
+  pass
 
-log_format    = '%(asctime)s - %(levelname)-8s - %(message)s'
+log_format    = '%(asctime)s - %(levelname)-8s - %(message)s [%(name)s]'
 log_date_format = '%Y-%m-%d %H:%M:%S'
 
-def mk_formatter():
-  f = logging.Formatter(log_format, log_date_format)
-  return f
+def setup_logging():
+  root = logging.getLogger()
+  root.setLevel(logging.WARN)
+  logging.getLogger(__name__).setLevel(logging.INFO)
 
-def mk_logger():
-  log = logging.getLogger()
-  log.setLevel(logging.DEBUG)
-
-  if have_colorlog:
+  if 'colorlog' in sys.modules and os.isatty(2):
     cformat   = '%(log_color)s' + log_format
     cf = colorlog.ColoredFormatter(cformat, log_date_format,
       log_colors = { 'DEBUG': 'reset', 'INFO': 'reset',
@@ -73,27 +72,33 @@ def mk_logger():
         'CRITICAL': 'bold_red'})
 
   else:
-    cf = mk_formatter()
+    cf = logging.Formatter(log_format, log_date_format)
 
   ch = logging.StreamHandler()
-  ch.setLevel(logging.WARNING)
-  if os.isatty(2):
-    ch.setFormatter(cf)
-  else:
-    ch.setFormatter(f)
-  log.addHandler(ch)
+  ch.setFormatter(cf)
+  root.addHandler(ch)
 
-  return logging.getLogger(__name__)
-
-log = mk_logger()
+log = logging.getLogger(__name__)
 
 def setup_file_logging(filename):
-  log = logging.getLogger()
+  root = logging.getLogger()
+  root.setLevel(logging.DEBUG)
+  logging.getLogger(__name__).setLevel(logging.NOTSET)
+
   fh = logging.FileHandler(filename)
   fh.setLevel(logging.DEBUG)
-  f = logging.Formatter(log_format + ' - [%(name)s]', log_date_format)
+  f = logging.Formatter(log_format, log_date_format)
   fh.setFormatter(f)
-  log.addHandler(fh)
+  root.addHandler(fh)
+
+  class Filter:
+    def filter(self, r):
+      return r.name == __name__ or r.levelno >= logging.WARNING
+
+  ch = root.handlers[0]
+  ch.setLevel(logging.INFO)
+  ch.addFilter(Filter())
+
 
 
 def mk_arg_parser():
@@ -163,12 +168,12 @@ Frank and buy 2 stamps (create 2 page document postage_YYYY-MM-DD.pdf):
       help='update internal format list via webservice')
   return p
 
-def parse_args(xs = None):
+def parse_args(*xs):
   arg_parser = mk_arg_parser()
-  if xs or xs == []:
-    args = arg_parser.parse_args(xs)
-  else:
-    args = arg_parser.parse_args()
+  args = arg_parser.parse_args(*xs)
+
+  if args.debug:
+    setup_file_logging(args.debug)
   if not args.config:
     args.config = [ '~/.config/frank.conf' ]
   if not args.format:
@@ -335,6 +340,7 @@ def store_files(res, args):
     pdf_bin = res.shoppingCart.voucherList.voucher[0].pdf_bin
   if pdf_bin:
     filename = mk_filename(args)
+    log.info('Writing: {}'.format(filename))
     with open(filename, 'wb') as f:
       f.write(pdf_bin)
 
@@ -406,14 +412,11 @@ def run(args, conf):
   store_files(res, args)
   return 0
 
-def main():
-  args = parse_args()
+def main(args):
   conf = read_config([args.global_conf, args.sys_conf]
     + [os.path.expanduser(x) for x in args.config] )
   parse_addresses(args, conf)
   apply_config(args, conf)
-  if args.debug:
-    setup_file_logging(args.debug)
   try:
     return run(args, conf)
   except zeep.exceptions.Fault as e:
@@ -425,9 +428,14 @@ def main():
       d = " - ".join(", ".join(x.text for x in xs) for xs in (ids, ms))
     except TypeError:
       pass
-    print('webservice fail: {} ({})'.format(e.message, d), file=sys.stderr)
+    log.error('webservice fail: {} ({})'.format(e.message, d), file=sys.stderr)
     return 1
 
 if __name__ == '__main__':
-  sys.exit(main())
+  setup_logging()
+  args = parse_args()
+
+  log.debug('Starting frank.py')
+
+  sys.exit(main(args))
 
