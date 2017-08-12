@@ -455,7 +455,7 @@ def main():
   setup_logging()
   args = parse_args()
   log.debug('Starting frank.py')
-  imain(args)
+  return imain(args)
 
 if __name__ == '__main__':
   sys.exit(main())
