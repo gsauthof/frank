@@ -8,8 +8,7 @@ communicating with that web-service (which uses a custom
 [SOAP][2] flavour).
 
 Since mid 2017 it is [integrated with the inema package][1]. That
-means that after inema version > 0.2 is out you can get `frank`
-via pip, e.g.:
+means you can easily get `frank` via pip, e.g.:
 
     $ pip3 install --user inema
 
@@ -55,7 +54,7 @@ Alternatively, you can also [just register a 'Portokasse' account][6] ([see also
 
 The API credentials have to be requested separately. Basically
 you have to fill out some [web-form][5], you get contacted by an
-operator for confirmation and then you have follow-up with a
+operator for confirmation and then you have to follow-up with a
 request for the credentials. Or, you can [directly write an
 email][1] to the address of the Deutsche-Post web-service team.
 
