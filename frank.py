@@ -433,7 +433,7 @@ def run(args, conf):
     if ss.__len__() > 1:
       ss = ss[1:]
     i = i + 1
-  log.warn('Buying postage for {} €'.format(im.compute_total()/100))
+  log.warning('Buying postage for {} €'.format(im.compute_total()/100))
   res = im.checkoutPDF(args.format)
   store_files(res, args)
   return 0
