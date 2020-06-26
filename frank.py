@@ -189,11 +189,17 @@ It's also fine to delimit the recipient lines with newline characters.
       help='update internal format list via webservice')
   p.add_argument('--print', action='store_true', default=False,
       help='Print the retrieved PDF with the lpr command')
+  p.add_argument('--version', '-v', action='store_true',
+      help='Display inema package version')
   return p
 
 def parse_args(*xs):
   arg_parser = mk_arg_parser()
   args = arg_parser.parse_args(*xs)
+
+  if args.version:
+      print(inema.__version__)
+      sys.exit(0)
 
   if args.debug:
     setup_file_logging(args.debug)
