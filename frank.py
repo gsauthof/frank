@@ -219,7 +219,7 @@ def read_config(filenames):
 def list_products(expr):
   l = []
   e = re.compile(expr, flags=re.IGNORECASE)
-  for k,v in inema.marke_products.items():
+  for k,v in inema.default_products.items():
     if not e.search(v['name']):
       continue
     h = v
