@@ -1,3 +1,17 @@
+# Archived Content Notice
+
+Since frank.py is part of python-inema for many years and
+further development is happening there this github repository is
+archived.
+
+Go to current locations:
+
+- https://gitea.sysmocom.de/odoo/python-inema.git
+- https://codeberg.org/gms/python-inema
+
+
+## frank
+
 This repository contains the command line program `frank` for buying
 postage online.
 
